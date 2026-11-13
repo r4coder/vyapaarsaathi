@@ -8,7 +8,7 @@ await a.post('/api/auth/register').set('Origin','https://evil.example').set('X-C
 const email=randomUUID()+'@example.test',password='Test-password-12345';
 await a.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password:'short'}).expect(422);
 const ar=await a.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password}).expect(201);
-assert.ok(ar.headers['set-cookie'].some((c:string)=>c.includes('HttpOnly')));assert.equal(ar.body.data.password_hash,undefined);
+assert.ok(String(ar.headers['set-cookie']).includes('HttpOnly'));assert.equal(ar.body.data.password_hash,undefined);
 await b.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',tb).send({email:randomUUID()+'@example.test',password}).expect(201);
 const business=(await a.post('/api/merchants').set('Origin',origin).set('X-CSRF-Token',ta).send(p).expect(201)).body.data;
 await b.get('/api/merchants/'+business.id).expect(404);

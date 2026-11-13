@@ -34,3 +34,5 @@ Runtime database role must not own tables or bypass RLS. User scope is transacti
 Password recovery/email verification, distributed rate-limit store, multi-member roles and session cleanup must be resolved before production readiness.
 Raw passwords, session tokens, customer data and provider secrets must never be logged.
 Every task and phase requires evidence before its checkbox is completed.
+
+CI run 43357871588: migration and repeat-migration checks passed; typecheck found a test-header typing issue. Corrected the assertion; remaining gates must rerun. Lockfile generated and committed by CI.
