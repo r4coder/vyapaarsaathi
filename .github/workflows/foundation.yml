@@ -1,0 +1,34 @@
+name: Foundation prerequisites
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prerequisites:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test_admin
+          POSTGRES_PASSWORD: ci_only_disposable_password
+          POSTGRES_DB: vyapaar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check registry
+        run: npm ping --fetch-retries=0 --fetch-timeout=15000
+      - name: Check disposable PostgreSQL
+        env:
+          PGPASSWORD: ci_only_disposable_password
+        run: psql -h localhost -U test_admin -d vyapaar_test -v ON_ERROR_STOP=1 -c 'SELECT version();'
