@@ -1,0 +1,25 @@
+import {test,after} from 'node:test';import assert from 'node:assert/strict';import request from 'supertest';import {randomUUID} from 'node:crypto';
+import {app} from '../apps/api/app.js';import {pool,asUser,verifyRuntime} from '../apps/api/db.js';
+after(()=>pool.end());const origin='http://localhost:3000';const p={name:'Synthetic Test Store',category:'grocery',location:'Hyderabad',language:'te',timezone:'Asia/Kolkata',goals:'Less waste'};
+test('foundation journey, CSRF, concurrency and tenant isolation',async()=>{
+await verifyRuntime();const a=request.agent(app),b=request.agent(app);const ta=(await a.get('/api/auth/csrf')).body.data.token,tb=(await b.get('/api/auth/csrf')).body.data.token;
+await a.post('/api/auth/register').send({}).expect(403);
+await a.post('/api/auth/register').set('Origin','https://evil.example').set('X-CSRF-Token',ta).send({}).expect(403);
+const email=randomUUID()+'@example.test',password='Test-password-12345';
+await a.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password:'short'}).expect(422);
+const ar=await a.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password}).expect(201);
+assert.ok(ar.headers['set-cookie'].some((c:string)=>c.includes('HttpOnly')));assert.equal(ar.body.data.password_hash,undefined);
+await b.post('/api/auth/register').set('Origin',origin).set('X-CSRF-Token',tb).send({email:randomUUID()+'@example.test',password}).expect(201);
+const business=(await a.post('/api/merchants').set('Origin',origin).set('X-CSRF-Token',ta).send(p).expect(201)).body.data;
+await b.get('/api/merchants/'+business.id).expect(404);
+await b.patch('/api/merchants/'+business.id).set('Origin',origin).set('X-CSRF-Token',tb).send({...p,version:1}).expect(404);
+const scoped=await asUser(ar.body.data.id,async c=>(await c.query('SELECT id FROM merchants WHERE id=$1',[business.id])).rows);assert.equal(scoped.length,1);
+assert.equal((await pool.query('SELECT id FROM merchants')).rows.length,0);
+await assert.rejects(asUser(ar.body.data.id,async c=>{await c.query('UPDATE merchants SET owner_id=$1 WHERE id=$2',[randomUUID(),business.id]);}));
+await a.patch('/api/merchants/'+business.id).set('Origin',origin).set('X-CSRF-Token',ta).send({...p,name:'Updated Store',version:1}).expect(200);
+await a.patch('/api/merchants/'+business.id).set('Origin',origin).set('X-CSRF-Token',ta).send({...p,version:1}).expect(409);
+await a.post('/api/auth/logout').set('Origin',origin).set('X-CSRF-Token',ta).expect(204);await a.get('/api/auth/me').expect(401);
+await a.post('/api/auth/login').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password:'Wrong-password-123'}).expect(401);
+await a.post('/api/auth/login').set('Origin',origin).set('X-CSRF-Token',ta).send({email,password}).expect(200);
+assert.equal((await a.get('/api/auth/me')).body.data.businesses[0].name,'Updated Store');
+});

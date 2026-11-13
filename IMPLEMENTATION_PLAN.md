@@ -1,28 +1,36 @@
-# VyapaarSaathi implementation plan
-
-Current phase: Phase 1, incomplete. No application deployment is complete.
+# Implementation plan
+Current phase: 1, implementation written; verification pending. No full product or production deployment claimed.
 
 ## Completed
-- [x] Review supplied product requirements and prepare architecture, database, API, AI, security and testing plans.
-- [x] Inspect initial repository contents.
-- [x] Confirm Docker and npm work in the user's terminal; agent execution environment remains restricted.
+- [x] Architecture review and planning documents prepared.
+- [x] GitHub write and workflow access verified.
+- [x] Remote npm/PostgreSQL prerequisite workflow passed.
+- [x] Write React/Vite frontend and Express TypeScript API.
+- [x] Write shared validation, session auth, CSRF/Origin checks and rate limits.
+- [x] Write migration runner, owner-isolated PostgreSQL RLS and runtime-role check.
+- [x] Write onboarding/profile read/edit/logout/login journey with optimistic concurrency.
+- [x] Write API security/isolation tests and desktop/mobile Playwright journey.
+- [x] Configure remote checks and dependency lockfile generation.
 
-## Phase 1 foundation
-- [ ] Verify repository write access and remote CI permissions.
-- [ ] Set up React/Vite and Express TypeScript with locked dependencies.
-- [ ] Implement and test PostgreSQL migrations and least-privilege runtime access.
-- [ ] Implement registration, login, revocable sessions and tenant authorization.
-- [ ] Complete merchant onboarding and persisted profile editing.
-- [ ] Add labelled synthetic demo seeds.
-- [ ] Pass build, typecheck, lint, API/database and browser tests.
-- [ ] Provide verified run commands and manual acceptance checks.
+## Phase 1 gate
+- [ ] CI typecheck, lint, build and API tests pass.
+- [ ] Real PostgreSQL isolation and browser journeys pass.
+- [ ] Add complete demo seed and resolve core security/UX findings.
+- [ ] Verified manual run instructions and phase review.
+- [ ] Phase 1 complete. Do not advance yet.
 
-## Subsequent phases
-- [ ] Phase 2: business data, CSV imports, inventory, expenses and deterministic dashboard.
-- [ ] Phase 3: central copilot and evidence-backed business intelligence.
-- [ ] Phase 4: simulator, forecasting, workflows and approval-controlled execution.
-- [ ] Phase 5: multilingual voice, customer support and visual store intelligence.
-- [ ] Phase 6: sourced market intelligence, reports, notifications and integrations.
-- [ ] Phase 7: security/performance/E2E validation and verified deployment.
+## Remaining phases
+- [ ] Phase 2 business records, imports and deterministic dashboard.
+- [ ] Phase 3 central copilot and evidence-backed intelligence.
+- [ ] Phase 4 digital twin, forecasts, approval-controlled workflows.
+- [ ] Phase 5 multilingual voice, customer support and image analysis.
+- [ ] Phase 6 sourced market signals, reporting and integrations.
+- [ ] Phase 7 security/performance/E2E release gates and deployment.
 
-Before each phase review architecture, dependencies, security, scalability and integration requirements. Implement complete frontend-to-database journeys with AI where applicable. Update this checklist after each completed task. Never advance with broken builds, failing critical tests or incomplete core workflows. Do not claim synthetic data or disconnected integrations are live functionality.
+## Architecture decisions
+Phase 1 uses owner-only workspaces. No unimplemented member management UI.
+Use Node scrypt (N=32768,r=8,p=3) instead of native Argon2 dependency; hashed random sessions, HttpOnly cookies and explicit Origin/CSRF validation.
+Runtime database role must not own tables or bypass RLS. User scope is transaction-local.
+Password recovery/email verification, distributed rate-limit store, multi-member roles and session cleanup must be resolved before production readiness.
+Raw passwords, session tokens, customer data and provider secrets must never be logged.
+Every task and phase requires evidence before its checkbox is completed.

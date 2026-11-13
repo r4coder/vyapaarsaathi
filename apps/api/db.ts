@@ -1,0 +1,5 @@
+import pg from 'pg';
+if(!process.env.DATABASE_URL)throw new Error('DATABASE_URL required');
+export const pool=new pg.Pool({connectionString:process.env.DATABASE_URL,max:10,connectionTimeoutMillis:5000,statement_timeout:10000});
+export async function asUser<T>(id:string,fn:(c:pg.PoolClient)=>Promise<T>):Promise<T>{const c=await pool.connect();try{await c.query('BEGIN');await c.query("SELECT set_config('app.user_id',$1,true)",[id]);const value=await fn(c);await c.query('COMMIT');return value;}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}}
+export async function verifyRuntime(){const r=await pool.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user');const o=await pool.query("SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='merchants' AND tableowner=current_user");if(r.rows[0].rolsuper||r.rows[0].rolbypassrls||o.rowCount)throw new Error('Runtime role must not own tables or bypass RLS');await pool.query('SELECT name FROM schema_migrations');}

@@ -1,11 +1,11 @@
-name: Foundation prerequisites
+name: Foundation verification
 on:
   push:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
-  prerequisites:
+  verify:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -21,14 +21,45 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+    env:
+      DATABASE_URL: postgres://vs_runtime:ci_runtime_password@localhost:5432/vyapaar_test
+      MIGRATION_DATABASE_URL: postgres://test_admin:ci_only_disposable_password@localhost:5432/vyapaar_test
+      RUNTIME_ROLE: vs_runtime
+      APP_ORIGIN: http://localhost:3000
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check registry
-        run: npm ping --fetch-retries=0 --fetch-timeout=15000
-      - name: Check disposable PostgreSQL
+      - name: Resolve dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Preserve lockfile
+        run: |
+          if ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "build: lock resolved dependencies"
+            git push
+          fi
+      - name: Create restricted runtime role
         env:
           PGPASSWORD: ci_only_disposable_password
-        run: psql -h localhost -U test_admin -d vyapaar_test -v ON_ERROR_STOP=1 -c 'SELECT version();'
+        run: psql -h localhost -U test_admin -d vyapaar_test -v ON_ERROR_STOP=1 -c "CREATE ROLE vs_runtime LOGIN PASSWORD 'ci_runtime_password' NOSUPERUSER NOBYPASSRLS;"
+      - run: npm run db:migrate
+      - run: npm run db:migrate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: |
+            test-results
+            playwright-report
