@@ -36,3 +36,8 @@ Raw passwords, session tokens, customer data and provider secrets must never be 
 Every task and phase requires evidence before its checkbox is completed.
 
 CI run 43357871588: migration and repeat-migration checks passed; typecheck found a test-header typing issue. Corrected the assertion; remaining gates must rerun. Lockfile generated and committed by CI.
+
+- [x] Add explicit synthetic demo seed (run with npx tsx database/seed-demo.ts and configured DEMO_EMAIL/DEMO_PASSWORD/SEED_SYNTHETIC_DEMO=yes).
+- [x] Add expired-session cleanup and startup validation.
+
+CI run 43358129869: TypeScript, lint, build and API/PostgreSQL tests passed; browser installation/test still running. Synthetic seed is queued for the next CI run.

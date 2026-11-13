@@ -17,7 +17,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test_admin -d vyapaar_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -50,6 +50,12 @@ jobs:
         run: psql -h localhost -U test_admin -d vyapaar_test -v ON_ERROR_STOP=1 -c "CREATE ROLE vs_runtime LOGIN PASSWORD 'ci_runtime_password' NOSUPERUSER NOBYPASSRLS;"
       - run: npm run db:migrate
       - run: npm run db:migrate
+      - name: Verify synthetic seed
+        env:
+          SEED_SYNTHETIC_DEMO: 'yes'
+          DEMO_EMAIL: seeded@example.test
+          DEMO_PASSWORD: ci-synthetic-password-12345
+        run: npx tsx database/seed-demo.ts
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build

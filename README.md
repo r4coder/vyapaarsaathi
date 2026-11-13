@@ -11,3 +11,8 @@ Run npm ci after the dependency lockfile is committed, npm run db:migrate, npm r
 Run npm run typecheck, npm run lint, npm test, and npm run test:e2e against a disposable database. Browser tests register, create a profile, update/reload, logout/login on desktop and mobile. API tests cover CSRF, wrong origin, invalid input, private profile access, RLS and stale writes.
 
 Manual check: open http://localhost:3000, register with a password of at least 12 characters, create a business, edit its profile, reload, then sign out and sign in. Create a second account to verify isolation. Never point tests at production.
+
+## Optional synthetic demo
+Set SEED_SYNTHETIC_DEMO=yes, DEMO_EMAIL and DEMO_PASSWORD in your private environment, then run npx tsx database/seed-demo.ts. It creates a new, clearly labelled demo account atomically and refuses a duplicate email. Never commit these values.
+
+Current limitations: owner-only workspaces; account recovery and email verification are not implemented. Phase 2–7 features are not available. This release must not be represented as the complete product.
